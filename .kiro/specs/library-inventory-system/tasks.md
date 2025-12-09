@@ -60,7 +60,7 @@
   - 複合条件での検索実行
   - _Requirements: 2.4_
 
-- [ ] 3.3 検索 REST API エンドポイント
+- [x] 3.3 検索 REST API エンドポイント
   - GET /api/books/search - 検索実行（クエリパラメータ対応）
   - GET /api/books/:id - 書籍詳細と貸出状況表示
   - ページネーション対応

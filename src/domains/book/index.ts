@@ -31,3 +31,4 @@ export { createSearchService } from './search-service.js';
 
 // コントローラー
 export { createBookController } from './book-controller.js';
+export { createSearchController } from './search-controller.js';
