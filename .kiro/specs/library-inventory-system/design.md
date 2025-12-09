@@ -76,10 +76,10 @@ graph TB
 
 | Layer | Choice / Version | Role in Feature | Notes |
 |-------|------------------|-----------------|-------|
-| Frontend | React 18 + TypeScript 5 | 管理画面UI、検索インターフェース | Vite でバンドル |
-| Backend | Node.js 20 LTS + Express 4 | REST API サーバー | TypeScript で型安全性確保 |
+| Frontend | React 19 + TypeScript 5.9 | 管理画面UI、検索インターフェース | Vite でバンドル |
+| Backend | Node.js 24 LTS (Krypton) + Express 5 | REST API サーバー | TypeScript で型安全性確保 |
 | Data | PostgreSQL 16 | 蔵書・利用者・貸出データ永続化 | 全文検索機能活用 |
-| Cache/Queue | Redis 7 | セッション管理、ジョブキュー | BullMQ でジョブ管理 |
+| Cache/Queue | Redis 8 | セッション管理、ジョブキュー | BullMQ でジョブ管理 |
 | Infrastructure | Docker + Docker Compose | 開発・本番環境統一 | - |
 
 ## System Flows
