@@ -59,6 +59,12 @@ export interface BookCopy {
   readonly createdAt: Date;
 }
 
+/** 蔵書コピー登録入力 */
+export interface CreateCopyInput {
+  readonly location: string;
+  readonly status?: BookCopyStatus;
+}
+
 // ============================================
 // エラー型定義
 // ============================================

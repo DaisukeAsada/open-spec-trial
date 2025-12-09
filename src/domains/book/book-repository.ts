@@ -5,9 +5,9 @@
  * 具体的な実装は Infrastructure 層で行います。
  */
 
-import type { BookId } from '../../shared/branded-types.js';
+import type { BookId, CopyId } from '../../shared/branded-types.js';
 import type { Result } from '../../shared/result.js';
-import type { Book, CreateBookInput, UpdateBookInput, BookError } from './types.js';
+import type { Book, CreateBookInput, UpdateBookInput, BookError, BookCopy, CreateCopyInput, BookCopyStatus } from './types.js';
 
 // ============================================
 // リポジトリインターフェース
@@ -50,4 +50,38 @@ export interface BookRepository {
    * @returns 成功またはNOT_FOUNDエラー
    */
   delete(id: BookId): Promise<Result<void, BookError>>;
+
+  // ============================================
+  // 蔵書コピー関連メソッド
+  // ============================================
+
+  /**
+   * 新しい蔵書コピーを作成
+   * @param bookId - 書籍ID
+   * @param input - 蔵書コピー登録入力
+   * @returns 作成された蔵書コピーまたはエラー
+   */
+  createCopy(bookId: BookId, input: CreateCopyInput): Promise<Result<BookCopy, BookError>>;
+
+  /**
+   * IDで蔵書コピーを取得
+   * @param copyId - 蔵書コピーID
+   * @returns 蔵書コピーまたはNOT_FOUNDエラー
+   */
+  findCopyById(copyId: CopyId): Promise<Result<BookCopy, BookError>>;
+
+  /**
+   * 蔵書コピーを更新
+   * @param copyId - 蔵書コピーID
+   * @param status - 新しいステータス
+   * @returns 更新された蔵書コピーまたはエラー
+   */
+  updateCopy(copyId: CopyId, status: BookCopyStatus): Promise<Result<BookCopy, BookError>>;
+
+  /**
+   * 書籍IDで蔵書コピー一覧を取得
+   * @param bookId - 書籍ID
+   * @returns 蔵書コピー一覧
+   */
+  findCopiesByBookId(bookId: BookId): Promise<Result<BookCopy[], BookError>>;
 }

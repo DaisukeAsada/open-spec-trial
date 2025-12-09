@@ -7,6 +7,7 @@ export type {
   BookCopyStatus,
   CreateBookInput,
   UpdateBookInput,
+  CreateCopyInput,
   BookError,
 } from './types.js';
 

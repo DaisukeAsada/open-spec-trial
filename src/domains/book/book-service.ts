@@ -4,12 +4,12 @@
  * 蔵書（書籍マスタ）のCRUD操作を提供します。
  */
 
-import type { BookId } from '../../shared/branded-types.js';
+import type { BookId, CopyId } from '../../shared/branded-types.js';
 import type { Result } from '../../shared/result.js';
 import { ok, err, isErr } from '../../shared/result.js';
 import { validateISBN, validateRequired } from '../../shared/validation.js';
 import type { BookRepository } from './book-repository.js';
-import type { Book, CreateBookInput, UpdateBookInput, BookError } from './types.js';
+import type { Book, CreateBookInput, UpdateBookInput, BookError, BookCopy, CreateCopyInput, BookCopyStatus } from './types.js';
 
 // ============================================
 // サービスインターフェース
@@ -45,6 +45,33 @@ export interface BookService {
    * @returns 成功またはNOT_FOUNDエラー
    */
   deleteBook(id: BookId): Promise<Result<void, BookError>>;
+
+  // ============================================
+  // 蔵書コピー関連メソッド
+  // ============================================
+
+  /**
+   * 蔵書コピーを登録
+   * @param bookId - 書籍ID
+   * @param input - 蔵書コピー登録入力
+   * @returns 作成された蔵書コピーまたはエラー
+   */
+  createBookCopy(bookId: BookId, input: CreateCopyInput): Promise<Result<BookCopy, BookError>>;
+
+  /**
+   * 蔵書コピーのステータスを更新
+   * @param copyId - 蔵書コピーID
+   * @param status - 新しいステータス
+   * @returns 更新された蔵書コピーまたはエラー
+   */
+  updateCopyStatus(copyId: CopyId, status: BookCopyStatus): Promise<Result<BookCopy, BookError>>;
+
+  /**
+   * 書籍に紐づく蔵書コピー一覧を取得
+   * @param bookId - 書籍ID
+   * @returns 蔵書コピー一覧またはエラー
+   */
+  getCopiesByBookId(bookId: BookId): Promise<Result<BookCopy[], BookError>>;
 }
 
 // ============================================
@@ -148,6 +175,25 @@ function validateUpdateBookInput(
   return ok(input);
 }
 
+/**
+ * 蔵書コピー登録入力をバリデーション
+ */
+function validateCreateCopyInput(
+  input: CreateCopyInput
+): Result<CreateCopyInput, BookError> {
+  // 所在場所必須チェック
+  const locationResult = validateRequired(input.location, 'location');
+  if (isErr(locationResult)) {
+    return err({
+      type: 'VALIDATION_ERROR',
+      field: 'location',
+      message: locationResult.error.message,
+    });
+  }
+
+  return ok(input);
+}
+
 // ============================================
 // サービス実装
 // ============================================
@@ -223,6 +269,55 @@ export function createBookService(repository: BookRepository): BookService {
 
       // 書籍削除
       return repository.delete(id);
+    },
+
+    // ============================================
+    // 蔵書コピー関連メソッド
+    // ============================================
+
+    async createBookCopy(
+      bookId: BookId,
+      input: CreateCopyInput
+    ): Promise<Result<BookCopy, BookError>> {
+      // 書籍存在チェック
+      const bookResult = await repository.findById(bookId);
+      if (isErr(bookResult)) {
+        return bookResult;
+      }
+
+      // 入力バリデーション
+      const validationResult = validateCreateCopyInput(input);
+      if (isErr(validationResult)) {
+        return validationResult;
+      }
+
+      // 蔵書コピー作成
+      return repository.createCopy(bookId, input);
+    },
+
+    async updateCopyStatus(
+      copyId: CopyId,
+      status: BookCopyStatus
+    ): Promise<Result<BookCopy, BookError>> {
+      // 蔵書コピー存在チェック
+      const copyResult = await repository.findCopyById(copyId);
+      if (isErr(copyResult)) {
+        return copyResult;
+      }
+
+      // ステータス更新
+      return repository.updateCopy(copyId, status);
+    },
+
+    async getCopiesByBookId(bookId: BookId): Promise<Result<BookCopy[], BookError>> {
+      // 書籍存在チェック
+      const bookResult = await repository.findById(bookId);
+      if (isErr(bookResult)) {
+        return bookResult;
+      }
+
+      // 蔵書コピー一覧取得
+      return repository.findCopiesByBookId(bookId);
     },
   };
 }

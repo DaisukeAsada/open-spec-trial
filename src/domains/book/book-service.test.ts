@@ -7,8 +7,8 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { BookService, createBookService } from './book-service.js';
 import type { BookRepository } from './book-repository.js';
-import type { Book, CreateBookInput, UpdateBookInput } from './types.js';
-import { createBookId } from '../../shared/branded-types.js';
+import type { Book, CreateBookInput, UpdateBookInput, BookCopy, CreateCopyInput } from './types.js';
+import { createBookId, createCopyId } from '../../shared/branded-types.js';
 import { ok, err, isOk, isErr } from '../../shared/result.js';
 
 // ============================================
@@ -24,6 +24,10 @@ function createMockRepository(
     findByIsbn: vi.fn().mockResolvedValue(null),
     update: vi.fn().mockResolvedValue(ok(createMockBook())),
     delete: vi.fn().mockResolvedValue(ok(undefined)),
+    createCopy: vi.fn().mockResolvedValue(ok(createMockBookCopy())),
+    findCopyById: vi.fn().mockResolvedValue(ok(createMockBookCopy())),
+    updateCopy: vi.fn().mockResolvedValue(ok(createMockBookCopy())),
+    findCopiesByBookId: vi.fn().mockResolvedValue(ok([])),
     ...overrides,
   };
 }
@@ -39,6 +43,17 @@ function createMockBook(overrides: Partial<Book> = {}): Book {
     category: 'プログラミング',
     createdAt: new Date('2024-01-01'),
     updatedAt: new Date('2024-01-01'),
+    ...overrides,
+  };
+}
+
+function createMockBookCopy(overrides: Partial<BookCopy> = {}): BookCopy {
+  return {
+    id: createCopyId('copy-123'),
+    bookId: createBookId('book-123'),
+    location: '1F-A-01',
+    status: 'AVAILABLE',
+    createdAt: new Date('2024-01-01'),
     ...overrides,
   };
 }
@@ -382,5 +397,283 @@ describe('BookService.deleteBook', () => {
     if (isErr(result)) {
       expect(result.error.type).toBe('NOT_FOUND');
     }
+  });
+});
+
+// ============================================
+// createBookCopy テスト
+// ============================================
+
+describe('BookService.createBookCopy', () => {
+  let service: BookService;
+  let mockRepository: BookRepository;
+
+  beforeEach(() => {
+    mockRepository = createMockRepository();
+    service = createBookService(mockRepository);
+  });
+
+  describe('正常系', () => {
+    it('有効な入力で蔵書コピーを登録できる', async () => {
+      const bookId = createBookId('book-123');
+      const expectedCopy = createMockBookCopy({
+        bookId,
+        location: '1F-A-01',
+        status: 'AVAILABLE',
+      });
+      mockRepository = createMockRepository({
+        findById: vi.fn().mockResolvedValue(ok(createMockBook({ id: bookId }))),
+        createCopy: vi.fn().mockResolvedValue(ok(expectedCopy)),
+      });
+      service = createBookService(mockRepository);
+
+      const input: CreateCopyInput = {
+        location: '1F-A-01',
+      };
+
+      const result = await service.createBookCopy(bookId, input);
+
+      expect(isOk(result)).toBe(true);
+      if (isOk(result)) {
+        expect(result.value.bookId).toBe(bookId);
+        expect(result.value.location).toBe('1F-A-01');
+        expect(result.value.status).toBe('AVAILABLE');
+      }
+    });
+
+    it('初期状態を指定して蔵書コピーを登録できる', async () => {
+      const bookId = createBookId('book-123');
+      const expectedCopy = createMockBookCopy({
+        bookId,
+        location: '2F-B-02',
+        status: 'MAINTENANCE',
+      });
+      mockRepository = createMockRepository({
+        findById: vi.fn().mockResolvedValue(ok(createMockBook({ id: bookId }))),
+        createCopy: vi.fn().mockResolvedValue(ok(expectedCopy)),
+      });
+      service = createBookService(mockRepository);
+
+      const input: CreateCopyInput = {
+        location: '2F-B-02',
+        status: 'MAINTENANCE',
+      };
+
+      const result = await service.createBookCopy(bookId, input);
+
+      expect(isOk(result)).toBe(true);
+      if (isOk(result)) {
+        expect(result.value.status).toBe('MAINTENANCE');
+      }
+    });
+  });
+
+  describe('エラー系', () => {
+    it('存在しない書籍IDはNOT_FOUNDエラーを返す', async () => {
+      const bookId = createBookId('non-existent');
+      mockRepository = createMockRepository({
+        findById: vi.fn().mockResolvedValue(
+          err({ type: 'NOT_FOUND' as const, id: 'non-existent' })
+        ),
+      });
+      service = createBookService(mockRepository);
+
+      const input: CreateCopyInput = {
+        location: '1F-A-01',
+      };
+
+      const result = await service.createBookCopy(bookId, input);
+
+      expect(isErr(result)).toBe(true);
+      if (isErr(result)) {
+        expect(result.error.type).toBe('NOT_FOUND');
+      }
+    });
+
+    it('所在場所が空の場合はVALIDATION_ERRORを返す', async () => {
+      const bookId = createBookId('book-123');
+      mockRepository = createMockRepository({
+        findById: vi.fn().mockResolvedValue(ok(createMockBook({ id: bookId }))),
+      });
+      service = createBookService(mockRepository);
+
+      const input: CreateCopyInput = {
+        location: '',
+      };
+
+      const result = await service.createBookCopy(bookId, input);
+
+      expect(isErr(result)).toBe(true);
+      if (isErr(result)) {
+        expect(result.error.type).toBe('VALIDATION_ERROR');
+        if (result.error.type === 'VALIDATION_ERROR') {
+          expect(result.error.field).toBe('location');
+        }
+      }
+    });
+  });
+});
+
+// ============================================
+// updateCopyStatus テスト
+// ============================================
+
+describe('BookService.updateCopyStatus', () => {
+  let service: BookService;
+  let mockRepository: BookRepository;
+
+  beforeEach(() => {
+    mockRepository = createMockRepository();
+    service = createBookService(mockRepository);
+  });
+
+  describe('正常系', () => {
+    it('蔵書コピーのステータスを更新できる', async () => {
+      const copyId = createCopyId('copy-123');
+      const updatedCopy = createMockBookCopy({
+        id: copyId,
+        status: 'BORROWED',
+      });
+      mockRepository = createMockRepository({
+        findCopyById: vi.fn().mockResolvedValue(ok(createMockBookCopy({ id: copyId }))),
+        updateCopy: vi.fn().mockResolvedValue(ok(updatedCopy)),
+      });
+      service = createBookService(mockRepository);
+
+      const result = await service.updateCopyStatus(copyId, 'BORROWED');
+
+      expect(isOk(result)).toBe(true);
+      if (isOk(result)) {
+        expect(result.value.status).toBe('BORROWED');
+      }
+    });
+
+    it('AVAILABLEからRESERVEDに変更できる', async () => {
+      const copyId = createCopyId('copy-123');
+      const existingCopy = createMockBookCopy({ id: copyId, status: 'AVAILABLE' });
+      const updatedCopy = createMockBookCopy({ id: copyId, status: 'RESERVED' });
+      mockRepository = createMockRepository({
+        findCopyById: vi.fn().mockResolvedValue(ok(existingCopy)),
+        updateCopy: vi.fn().mockResolvedValue(ok(updatedCopy)),
+      });
+      service = createBookService(mockRepository);
+
+      const result = await service.updateCopyStatus(copyId, 'RESERVED');
+
+      expect(isOk(result)).toBe(true);
+      if (isOk(result)) {
+        expect(result.value.status).toBe('RESERVED');
+      }
+    });
+
+    it('AVAILABLEからMAINTENANCEに変更できる', async () => {
+      const copyId = createCopyId('copy-123');
+      const existingCopy = createMockBookCopy({ id: copyId, status: 'AVAILABLE' });
+      const updatedCopy = createMockBookCopy({ id: copyId, status: 'MAINTENANCE' });
+      mockRepository = createMockRepository({
+        findCopyById: vi.fn().mockResolvedValue(ok(existingCopy)),
+        updateCopy: vi.fn().mockResolvedValue(ok(updatedCopy)),
+      });
+      service = createBookService(mockRepository);
+
+      const result = await service.updateCopyStatus(copyId, 'MAINTENANCE');
+
+      expect(isOk(result)).toBe(true);
+      if (isOk(result)) {
+        expect(result.value.status).toBe('MAINTENANCE');
+      }
+    });
+  });
+
+  describe('エラー系', () => {
+    it('存在しない蔵書コピーIDはNOT_FOUNDエラーを返す', async () => {
+      const copyId = createCopyId('non-existent');
+      mockRepository = createMockRepository({
+        findCopyById: vi.fn().mockResolvedValue(
+          err({ type: 'NOT_FOUND' as const, id: 'non-existent' })
+        ),
+      });
+      service = createBookService(mockRepository);
+
+      const result = await service.updateCopyStatus(copyId, 'BORROWED');
+
+      expect(isErr(result)).toBe(true);
+      if (isErr(result)) {
+        expect(result.error.type).toBe('NOT_FOUND');
+      }
+    });
+  });
+});
+
+// ============================================
+// getCopiesByBookId テスト
+// ============================================
+
+describe('BookService.getCopiesByBookId', () => {
+  let service: BookService;
+  let mockRepository: BookRepository;
+
+  beforeEach(() => {
+    mockRepository = createMockRepository();
+    service = createBookService(mockRepository);
+  });
+
+  describe('正常系', () => {
+    it('書籍に紐づく蔵書コピー一覧を取得できる', async () => {
+      const bookId = createBookId('book-123');
+      const copies = [
+        createMockBookCopy({ id: createCopyId('copy-1'), bookId, location: '1F-A-01' }),
+        createMockBookCopy({ id: createCopyId('copy-2'), bookId, location: '1F-A-02' }),
+      ];
+      mockRepository = createMockRepository({
+        findById: vi.fn().mockResolvedValue(ok(createMockBook({ id: bookId }))),
+        findCopiesByBookId: vi.fn().mockResolvedValue(ok(copies)),
+      });
+      service = createBookService(mockRepository);
+
+      const result = await service.getCopiesByBookId(bookId);
+
+      expect(isOk(result)).toBe(true);
+      if (isOk(result)) {
+        expect(result.value).toHaveLength(2);
+        expect(result.value[0]?.location).toBe('1F-A-01');
+        expect(result.value[1]?.location).toBe('1F-A-02');
+      }
+    });
+
+    it('蔵書コピーがない場合は空配列を返す', async () => {
+      const bookId = createBookId('book-123');
+      mockRepository = createMockRepository({
+        findById: vi.fn().mockResolvedValue(ok(createMockBook({ id: bookId }))),
+        findCopiesByBookId: vi.fn().mockResolvedValue(ok([])),
+      });
+      service = createBookService(mockRepository);
+
+      const result = await service.getCopiesByBookId(bookId);
+
+      expect(isOk(result)).toBe(true);
+      if (isOk(result)) {
+        expect(result.value).toHaveLength(0);
+      }
+    });
+  });
+
+  describe('エラー系', () => {
+    it('存在しない書籍IDはNOT_FOUNDエラーを返す', async () => {
+      const bookId = createBookId('non-existent');
+      mockRepository = createMockRepository({
+        findById: vi.fn().mockResolvedValue(
+          err({ type: 'NOT_FOUND' as const, id: 'non-existent' })
+        ),
+      });
+      service = createBookService(mockRepository);
+
+      const result = await service.getCopiesByBookId(bookId);
+
+      expect(isErr(result)).toBe(true);
+      if (isErr(result)) {
+        expect(result.error.type).toBe('NOT_FOUND');
+      }
+    });
   });
 });
