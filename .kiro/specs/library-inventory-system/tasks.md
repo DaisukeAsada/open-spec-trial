@@ -125,7 +125,7 @@
   - 延滞記録の利用者履歴への保存
   - _Requirements: 4.3, 4.4_
 
-- [ ] 6.3 返却管理 REST API エンドポイント
+- [x] 6.3 返却管理 REST API エンドポイント
   - POST /api/loans/:id/return - 返却処理
   - 延滞情報を含むレスポンス
   - _Requirements: 4.1, 4.2, 4.3, 4.4_

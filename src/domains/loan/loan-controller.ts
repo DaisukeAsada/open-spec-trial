@@ -6,6 +6,7 @@
  * エンドポイント:
  * - POST /api/loans - 貸出処理
  * - GET /api/loans/:id - 貸出詳細
+ * - POST /api/loans/:id/return - 返却処理
  */
 
 import { Router, type Request, type Response } from 'express';
@@ -116,6 +117,23 @@ export function createLoanController(loanService: LoanService): Router {
     const loanId = req.params.id as LoanId;
 
     const result = await loanService.getLoanById(loanId);
+
+    if (isOk(result)) {
+      res.status(200).json(result.value);
+    } else {
+      const statusCode = getErrorStatusCode(result.error);
+      res.status(statusCode).json({ error: result.error });
+    }
+  });
+
+  // ============================================
+  // POST /api/loans/:id/return - 返却処理
+  // ============================================
+
+  router.post('/:id/return', async (req: Request, res: Response): Promise<void> => {
+    const loanId = req.params.id as LoanId;
+
+    const result = await loanService.returnBook(loanId);
 
     if (isOk(result)) {
       res.status(200).json(result.value);

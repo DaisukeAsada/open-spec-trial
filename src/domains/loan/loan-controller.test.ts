@@ -15,7 +15,8 @@ import { createLoanController } from './loan-controller.js';
 import type { LoanService } from './loan-service.js';
 import { createUserId, createCopyId, createLoanId } from '../../shared/branded-types.js';
 import { ok, err } from '../../shared/result.js';
-import type { Loan, LoanReceipt, LoanError } from './types.js';
+import type { Loan, LoanReceipt, LoanError, ReturnResult, OverdueRecord } from './types.js';
+import { createOverdueRecordId } from '../../shared/branded-types.js';
 
 // ============================================
 // モックファクトリ
@@ -255,6 +256,104 @@ describe('LoanController', () => {
         // Assert
         expect(response.status).toBe(404);
         expect(response.body.error).toHaveProperty('type', 'LOAN_NOT_FOUND');
+      });
+    });
+  });
+
+  describe('POST /api/loans/:id/return - 返却処理', () => {
+    describe('正常系', () => {
+      it('貸出を返却し200を返す（延滞なし）', async () => {
+        // Arrange
+        const returnResult: ReturnResult = {
+          loan: { ...testLoan, returnedAt: new Date('2024-06-10') },
+          isOverdue: false,
+        };
+        vi.mocked(mockLoanService.returnBook).mockResolvedValue(ok(returnResult));
+
+        // Act
+        const response = await request(app).post(`/api/loans/${testLoanId}/return`);
+
+        // Assert
+        expect(response.status).toBe(200);
+        expect(response.body).toHaveProperty('loan');
+        expect(response.body).toHaveProperty('isOverdue', false);
+        expect(response.body).not.toHaveProperty('overdueDays');
+      });
+
+      it('延滞書籍の返却で延滞情報を含むレスポンスを返す', async () => {
+        // Arrange
+        const overdueRecord: OverdueRecord = {
+          id: createOverdueRecordId('overdue-001'),
+          loanId: testLoanId,
+          overdueDays: 3,
+          recordedAt: new Date('2024-06-18'),
+        };
+        const returnResult: ReturnResult = {
+          loan: { ...testLoan, returnedAt: new Date('2024-06-18') },
+          isOverdue: true,
+          overdueDays: 3,
+          overdueRecord: overdueRecord,
+        };
+        vi.mocked(mockLoanService.returnBook).mockResolvedValue(ok(returnResult));
+
+        // Act
+        const response = await request(app).post(`/api/loans/${testLoanId}/return`);
+
+        // Assert
+        expect(response.status).toBe(200);
+        expect(response.body).toHaveProperty('loan');
+        expect(response.body).toHaveProperty('isOverdue', true);
+        expect(response.body).toHaveProperty('overdueDays', 3);
+        expect(response.body).toHaveProperty('overdueRecord');
+      });
+
+      it('サービスが正しい貸出IDで呼び出される', async () => {
+        // Arrange
+        const returnResult: ReturnResult = {
+          loan: { ...testLoan, returnedAt: new Date('2024-06-10') },
+          isOverdue: false,
+        };
+        vi.mocked(mockLoanService.returnBook).mockResolvedValue(ok(returnResult));
+
+        // Act
+        await request(app).post(`/api/loans/${testLoanId}/return`);
+
+        // Assert
+        expect(mockLoanService.returnBook).toHaveBeenCalledWith(testLoanId);
+      });
+    });
+
+    describe('異常系', () => {
+      it('存在しない貸出の場合404を返す', async () => {
+        // Arrange
+        const error: LoanError = {
+          type: 'LOAN_NOT_FOUND',
+          loanId: testLoanId,
+        };
+        vi.mocked(mockLoanService.returnBook).mockResolvedValue(err(error));
+
+        // Act
+        const response = await request(app).post(`/api/loans/${testLoanId}/return`);
+
+        // Assert
+        expect(response.status).toBe(404);
+        expect(response.body.error).toHaveProperty('type', 'LOAN_NOT_FOUND');
+      });
+
+      it('既に返却済みの場合409を返す', async () => {
+        // Arrange
+        const error: LoanError = {
+          type: 'ALREADY_RETURNED',
+          loanId: testLoanId,
+        };
+        vi.mocked(mockLoanService.returnBook).mockResolvedValue(err(error));
+
+        // Act
+        const response = await request(app).post(`/api/loans/${testLoanId}/return`);
+
+        // Assert
+        expect(response.status).toBe(409);
+        expect(response.body.error).toHaveProperty('type', 'ALREADY_RETURNED');
       });
     });
   });
