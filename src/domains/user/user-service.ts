@@ -9,7 +9,7 @@ import type { Result } from '../../shared/result.js';
 import { ok, err, isErr } from '../../shared/result.js';
 import { validateRequired, validateEmail } from '../../shared/validation.js';
 import type { UserRepository } from './user-repository.js';
-import type { User, CreateUserInput, UpdateUserInput, UserError } from './types.js';
+import type { User, CreateUserInput, UpdateUserInput, UserError, UserSearchCriteria, UserWithLoans } from './types.js';
 import { DEFAULT_LOAN_LIMIT } from './types.js';
 
 // ============================================
@@ -46,6 +46,20 @@ export interface UserService {
    * @returns 成功またはNOT_FOUNDエラー
    */
   deleteUser(id: UserId): Promise<Result<void, UserError>>;
+
+  /**
+   * 利用者を検索
+   * @param criteria - 検索条件（氏名、利用者ID、連絡先）
+   * @returns マッチした利用者の配列またはエラー
+   */
+  searchUsers(criteria: UserSearchCriteria): Promise<Result<User[], UserError>>;
+
+  /**
+   * 利用者詳細を貸出状況・履歴と共に取得
+   * @param id - 利用者ID
+   * @returns 利用者詳細（現在の貸出、貸出履歴）またはNOT_FOUNDエラー
+   */
+  getUserWithLoans(id: UserId): Promise<Result<UserWithLoans, UserError>>;
 }
 
 // ============================================
@@ -227,6 +241,47 @@ export function createUserService(repository: UserRepository): UserService {
       }
 
       return repository.delete(id);
+    },
+
+    async searchUsers(criteria: UserSearchCriteria): Promise<Result<User[], UserError>> {
+      // 検索条件が空の場合はエラー
+      const hasAnyCriteria =
+        (criteria.name !== undefined && criteria.name.trim() !== '') ||
+        (criteria.userId !== undefined && criteria.userId.trim() !== '') ||
+        (criteria.email !== undefined && criteria.email.trim() !== '') ||
+        (criteria.phone !== undefined && criteria.phone.trim() !== '');
+
+      if (!hasAnyCriteria) {
+        return err({
+          type: 'VALIDATION_ERROR',
+          field: 'criteria',
+          message: '検索条件を1つ以上指定してください',
+        });
+      }
+
+      const users = await repository.search(criteria);
+      return ok(users);
+    },
+
+    async getUserWithLoans(id: UserId): Promise<Result<UserWithLoans, UserError>> {
+      // 利用者存在チェック
+      const userResult = await repository.findById(id);
+      if (isErr(userResult)) {
+        return userResult;
+      }
+
+      // 貸出履歴を取得
+      const loans = await repository.findUserLoans(id);
+
+      // 現在の貸出（未返却）と履歴（返却済み）に分類
+      const currentLoans = loans.filter((loan) => loan.returnedAt === null);
+      const loanHistory = loans.filter((loan) => loan.returnedAt !== null);
+
+      return ok({
+        user: userResult.value,
+        currentLoans,
+        loanHistory,
+      });
     },
   };
 }

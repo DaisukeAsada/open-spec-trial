@@ -4,6 +4,9 @@ export type {
   CreateUserInput,
   UpdateUserInput,
   UserError,
+  UserSearchCriteria,
+  LoanSummary,
+  UserWithLoans,
 } from './types.js';
 export { DEFAULT_LOAN_LIMIT } from './types.js';
 

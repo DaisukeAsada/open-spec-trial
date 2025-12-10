@@ -7,7 +7,7 @@
 
 import type { UserId } from '../../shared/branded-types.js';
 import type { Result } from '../../shared/result.js';
-import type { User, CreateUserInput, UpdateUserInput, UserError } from './types.js';
+import type { User, CreateUserInput, UpdateUserInput, UserError, UserSearchCriteria, LoanSummary } from './types.js';
 
 // ============================================
 // リポジトリインターフェース
@@ -35,6 +35,20 @@ export interface UserRepository {
    * @returns 利用者またはnull
    */
   findByEmail(email: string): Promise<User | null>;
+
+  /**
+   * 利用者を検索
+   * @param criteria - 検索条件
+   * @returns マッチした利用者の配列
+   */
+  search(criteria: UserSearchCriteria): Promise<User[]>;
+
+  /**
+   * 利用者の貸出履歴を取得
+   * @param userId - 利用者ID
+   * @returns 貸出サマリーの配列
+   */
+  findUserLoans(userId: UserId): Promise<LoanSummary[]>;
 
   /**
    * 利用者を更新

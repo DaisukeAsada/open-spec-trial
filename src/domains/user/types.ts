@@ -39,6 +39,32 @@ export interface UpdateUserInput {
   readonly loanLimit?: number;
 }
 
+/** 利用者検索条件 */
+export interface UserSearchCriteria {
+  readonly name?: string;
+  readonly userId?: string;
+  readonly email?: string;
+  readonly phone?: string;
+}
+
+/** 貸出サマリー（利用者詳細表示用） */
+export interface LoanSummary {
+  readonly id: string;
+  readonly bookCopyId: string;
+  readonly bookTitle: string;
+  readonly borrowedAt: Date;
+  readonly dueDate: Date;
+  readonly returnedAt: Date | null;
+  readonly isOverdue: boolean;
+}
+
+/** 利用者詳細（貸出状況込み） */
+export interface UserWithLoans {
+  readonly user: User;
+  readonly currentLoans: readonly LoanSummary[];
+  readonly loanHistory: readonly LoanSummary[];
+}
+
 // ============================================
 // エラー型定義
 // ============================================
