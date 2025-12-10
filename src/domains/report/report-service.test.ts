@@ -271,4 +271,285 @@ describe('ReportService', () => {
       expect(isOk(result)).toBe(true);
     });
   });
+
+  // ============================================
+  // Task 9.2: レポート出力機能テスト
+  // ============================================
+
+  describe('exportStatisticsSummaryToCsv', () => {
+    it('統計サマリーをCSV形式でエクスポートできる', async () => {
+      // Arrange
+      const dateRange: DateRange = {
+        startDate: new Date('2024-01-01'),
+        endDate: new Date('2024-01-31'),
+      };
+      mockRepository = createMockReportRepository({
+        countLoans: () => Promise.resolve(100),
+        countReturns: () => Promise.resolve(90),
+        countOverdues: () => Promise.resolve(10),
+      });
+      service = createReportService(mockRepository);
+
+      // Act
+      const result = await service.exportStatisticsSummaryToCsv(dateRange);
+
+      // Assert
+      expect(isOk(result)).toBe(true);
+      if (isOk(result)) {
+        const csvLines = result.value.split('\n');
+        expect(csvLines[0]).toBe('項目,件数');
+        expect(csvLines[1]).toBe('貸出数,100');
+        expect(csvLines[2]).toBe('返却数,90');
+        expect(csvLines[3]).toBe('延滞数,10');
+      }
+    });
+
+    it('無効な期間の場合はエラーを返す', async () => {
+      // Arrange
+      const dateRange: DateRange = {
+        startDate: new Date('2024-02-01'),
+        endDate: new Date('2024-01-01'),
+      };
+      mockRepository = createMockReportRepository();
+      service = createReportService(mockRepository);
+
+      // Act
+      const result = await service.exportStatisticsSummaryToCsv(dateRange);
+
+      // Assert
+      expect(isErr(result)).toBe(true);
+      if (isErr(result)) {
+        expect(result.error.type).toBe('INVALID_DATE_RANGE');
+      }
+    });
+  });
+
+  describe('exportPopularBooksRankingToCsv', () => {
+    it('人気書籍ランキングをCSV形式でエクスポートできる', async () => {
+      // Arrange
+      const dateRange: DateRange = {
+        startDate: new Date('2024-01-01'),
+        endDate: new Date('2024-01-31'),
+      };
+      const mockPopularBooks: PopularBookItem[] = [
+        { bookId: createBookId('book-1'), title: '本A', author: '著者A', loanCount: 50, rank: 1 },
+        { bookId: createBookId('book-2'), title: '本B', author: '著者B', loanCount: 30, rank: 2 },
+      ];
+      mockRepository = createMockReportRepository({
+        getPopularBooks: () => Promise.resolve(mockPopularBooks),
+      });
+      service = createReportService(mockRepository);
+
+      // Act
+      const result = await service.exportPopularBooksRankingToCsv(dateRange, 10);
+
+      // Assert
+      expect(isOk(result)).toBe(true);
+      if (isOk(result)) {
+        const csvLines = result.value.split('\n');
+        expect(csvLines[0]).toBe('順位,タイトル,著者,貸出回数');
+        expect(csvLines[1]).toBe('1,本A,著者A,50');
+        expect(csvLines[2]).toBe('2,本B,著者B,30');
+      }
+    });
+
+    it('ランキングが空の場合はヘッダーのみを返す', async () => {
+      // Arrange
+      const dateRange: DateRange = {
+        startDate: new Date('2024-01-01'),
+        endDate: new Date('2024-01-31'),
+      };
+      mockRepository = createMockReportRepository({
+        getPopularBooks: () => Promise.resolve([]),
+      });
+      service = createReportService(mockRepository);
+
+      // Act
+      const result = await service.exportPopularBooksRankingToCsv(dateRange, 10);
+
+      // Assert
+      expect(isOk(result)).toBe(true);
+      if (isOk(result)) {
+        const csvLines = result.value.split('\n');
+        expect(csvLines).toHaveLength(1);
+        expect(csvLines[0]).toBe('順位,タイトル,著者,貸出回数');
+      }
+    });
+
+    it('タイトルや著者にカンマが含まれる場合はダブルクォートでエスケープする', async () => {
+      // Arrange
+      const dateRange: DateRange = {
+        startDate: new Date('2024-01-01'),
+        endDate: new Date('2024-01-31'),
+      };
+      const mockPopularBooks: PopularBookItem[] = [
+        {
+          bookId: createBookId('book-1'),
+          title: '本A, 続編',
+          author: '著者A, Jr.',
+          loanCount: 50,
+          rank: 1,
+        },
+      ];
+      mockRepository = createMockReportRepository({
+        getPopularBooks: () => Promise.resolve(mockPopularBooks),
+      });
+      service = createReportService(mockRepository);
+
+      // Act
+      const result = await service.exportPopularBooksRankingToCsv(dateRange, 10);
+
+      // Assert
+      expect(isOk(result)).toBe(true);
+      if (isOk(result)) {
+        const csvLines = result.value.split('\n');
+        expect(csvLines[1]).toBe('1,"本A, 続編","著者A, Jr.",50');
+      }
+    });
+  });
+
+  describe('exportCategoryStatisticsToCsv', () => {
+    it('カテゴリ別統計をCSV形式でエクスポートできる', async () => {
+      // Arrange
+      const dateRange: DateRange = {
+        startDate: new Date('2024-01-01'),
+        endDate: new Date('2024-01-31'),
+      };
+      const mockCategoryStats: CategoryStatisticsItem[] = [
+        { category: '小説', loanCount: 50, percentage: 50.0 },
+        { category: '技術書', loanCount: 30, percentage: 30.0 },
+      ];
+      mockRepository = createMockReportRepository({
+        getCategoryStatistics: () => Promise.resolve(mockCategoryStats),
+      });
+      service = createReportService(mockRepository);
+
+      // Act
+      const result = await service.exportCategoryStatisticsToCsv(dateRange);
+
+      // Assert
+      expect(isOk(result)).toBe(true);
+      if (isOk(result)) {
+        const csvLines = result.value.split('\n');
+        expect(csvLines[0]).toBe('カテゴリ,貸出回数,割合(%)');
+        expect(csvLines[1]).toBe('小説,50,50.00');
+        expect(csvLines[2]).toBe('技術書,30,30.00');
+      }
+    });
+
+    it('統計が空の場合はヘッダーのみを返す', async () => {
+      // Arrange
+      const dateRange: DateRange = {
+        startDate: new Date('2024-01-01'),
+        endDate: new Date('2024-01-31'),
+      };
+      mockRepository = createMockReportRepository({
+        getCategoryStatistics: () => Promise.resolve([]),
+      });
+      service = createReportService(mockRepository);
+
+      // Act
+      const result = await service.exportCategoryStatisticsToCsv(dateRange);
+
+      // Assert
+      expect(isOk(result)).toBe(true);
+      if (isOk(result)) {
+        const csvLines = result.value.split('\n');
+        expect(csvLines).toHaveLength(1);
+        expect(csvLines[0]).toBe('カテゴリ,貸出回数,割合(%)');
+      }
+    });
+  });
+
+  describe('formatStatisticsSummaryAsTable', () => {
+    it('統計サマリーを表形式のデータに整形できる', async () => {
+      // Arrange
+      const dateRange: DateRange = {
+        startDate: new Date('2024-01-01'),
+        endDate: new Date('2024-01-31'),
+      };
+      mockRepository = createMockReportRepository({
+        countLoans: () => Promise.resolve(100),
+        countReturns: () => Promise.resolve(90),
+        countOverdues: () => Promise.resolve(10),
+      });
+      service = createReportService(mockRepository);
+
+      // Act
+      const result = await service.formatStatisticsSummaryAsTable(dateRange);
+
+      // Assert
+      expect(isOk(result)).toBe(true);
+      if (isOk(result)) {
+        expect(result.value.headers).toEqual(['項目', '件数']);
+        expect(result.value.rows).toEqual([
+          ['貸出数', '100'],
+          ['返却数', '90'],
+          ['延滞数', '10'],
+        ]);
+      }
+    });
+  });
+
+  describe('formatPopularBooksRankingAsTable', () => {
+    it('人気書籍ランキングを表形式のデータに整形できる', async () => {
+      // Arrange
+      const dateRange: DateRange = {
+        startDate: new Date('2024-01-01'),
+        endDate: new Date('2024-01-31'),
+      };
+      const mockPopularBooks: PopularBookItem[] = [
+        { bookId: createBookId('book-1'), title: '本A', author: '著者A', loanCount: 50, rank: 1 },
+        { bookId: createBookId('book-2'), title: '本B', author: '著者B', loanCount: 30, rank: 2 },
+      ];
+      mockRepository = createMockReportRepository({
+        getPopularBooks: () => Promise.resolve(mockPopularBooks),
+      });
+      service = createReportService(mockRepository);
+
+      // Act
+      const result = await service.formatPopularBooksRankingAsTable(dateRange, 10);
+
+      // Assert
+      expect(isOk(result)).toBe(true);
+      if (isOk(result)) {
+        expect(result.value.headers).toEqual(['順位', 'タイトル', '著者', '貸出回数']);
+        expect(result.value.rows).toEqual([
+          ['1', '本A', '著者A', '50'],
+          ['2', '本B', '著者B', '30'],
+        ]);
+      }
+    });
+  });
+
+  describe('formatCategoryStatisticsAsTable', () => {
+    it('カテゴリ別統計を表形式のデータに整形できる', async () => {
+      // Arrange
+      const dateRange: DateRange = {
+        startDate: new Date('2024-01-01'),
+        endDate: new Date('2024-01-31'),
+      };
+      const mockCategoryStats: CategoryStatisticsItem[] = [
+        { category: '小説', loanCount: 50, percentage: 50.0 },
+        { category: '技術書', loanCount: 30, percentage: 30.0 },
+      ];
+      mockRepository = createMockReportRepository({
+        getCategoryStatistics: () => Promise.resolve(mockCategoryStats),
+      });
+      service = createReportService(mockRepository);
+
+      // Act
+      const result = await service.formatCategoryStatisticsAsTable(dateRange);
+
+      // Assert
+      expect(isOk(result)).toBe(true);
+      if (isOk(result)) {
+        expect(result.value.headers).toEqual(['カテゴリ', '貸出回数', '割合(%)']);
+        expect(result.value.rows).toEqual([
+          ['小説', '50', '50.00'],
+          ['技術書', '30', '30.00'],
+        ]);
+      }
+    });
+  });
 });

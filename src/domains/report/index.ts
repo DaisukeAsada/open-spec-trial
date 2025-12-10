@@ -9,6 +9,7 @@ export type {
   CategoryStatisticsItem,
   CategoryStatistics,
   ReportError,
+  TableData,
 } from './types.js';
 
 // Repository

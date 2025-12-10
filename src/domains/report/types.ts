@@ -77,3 +77,15 @@ export interface CategoryStatistics {
 export type ReportError =
   | { readonly type: 'VALIDATION_ERROR'; readonly field: string; readonly message: string }
   | { readonly type: 'INVALID_DATE_RANGE'; readonly message: string };
+
+// ============================================
+// レポート出力形式 (Task 9.2)
+// ============================================
+
+/** 表形式データ */
+export interface TableData {
+  /** ヘッダー行 */
+  readonly headers: readonly string[];
+  /** データ行 */
+  readonly rows: readonly (readonly string[])[];
+}
