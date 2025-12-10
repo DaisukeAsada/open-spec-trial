@@ -33,6 +33,7 @@
   "homepage": "https://github.com/DaisukeAsada/cc-sdd-trial#readme",
   "devDependencies": {
     "@types/express": "^5.0.6",
+    "@types/ioredis": "^4.28.10",
     "@types/node": "^24.10.2",
     "@types/pg": "^8.15.6",
     "@types/supertest": "^6.0.3",
@@ -50,6 +51,8 @@
     "vitest": "^4.0.15"
   },
   "dependencies": {
+    "bullmq": "^5.65.1",
+    "ioredis": "^5.8.2",
     "pg": "^8.16.3"
   }
 }
