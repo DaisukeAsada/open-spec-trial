@@ -18,3 +18,6 @@ export type { ReportRepository } from './report-repository.js';
 // Service
 export type { ReportService } from './report-service.js';
 export { createReportService } from './report-service.js';
+
+// Controller
+export { createReportController } from './report-controller.js';

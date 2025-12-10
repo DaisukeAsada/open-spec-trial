@@ -176,7 +176,7 @@
   - CSV エクスポート機能
   - _Requirements: 7.2, 7.4_
 
-- [ ] 9.3 レポート REST API エンドポイント
+- [x] 9.3 レポート REST API エンドポイント
   - GET /api/reports/summary - 統計サマリー
   - GET /api/reports/loans - 貸出統計（期間指定）
   - GET /api/reports/popular - 人気書籍ランキング
