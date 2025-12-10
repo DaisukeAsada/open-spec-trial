@@ -32,6 +32,6 @@ export default tseslint.config(
     },
   },
   {
-    ignores: ['dist/**', 'node_modules/**', '*.js', '*.cjs', '*.mjs'],
+    ignores: ['dist/**', 'node_modules/**', '*.js', '*.cjs', '*.mjs', 'vitest.config.ts'],
   }
 );

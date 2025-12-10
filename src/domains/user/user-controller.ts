@@ -94,7 +94,7 @@ export function createUserController(userService: UserService): Router {
       address: body.address ?? null,
       email: body.email ?? '',
       phone: body.phone ?? null,
-      loanLimit: body.loanLimit,
+      ...(body.loanLimit !== undefined && { loanLimit: body.loanLimit }),
     };
 
     const result = await userService.createUser(input);

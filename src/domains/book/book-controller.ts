@@ -179,7 +179,7 @@ export function createBookController(bookService: BookService): Router {
     const body = req.body as CreateCopyRequestBody;
     const input: CreateCopyInput = {
       location: body.location ?? '',
-      status: body.status,
+      ...(body.status !== undefined && { status: body.status }),
     };
 
     const result = await bookService.createBookCopy(bookId, input);

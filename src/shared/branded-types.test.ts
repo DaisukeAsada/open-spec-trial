@@ -5,6 +5,8 @@ import {
   createLoanId,
   createReservationId,
   createCopyId,
+  type BookId,
+  type UserId,
 } from './branded-types.js';
 
 describe('Branded Types', () => {
