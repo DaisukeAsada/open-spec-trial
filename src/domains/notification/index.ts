@@ -27,3 +27,20 @@ export {
 // サービスのエクスポート
 export type { NotificationService } from './notification-service.js';
 export { createNotificationService } from './notification-service.js';
+
+// メール送信のエクスポート
+export type {
+  EmailData,
+  EmailSender,
+  NotificationHistoryRecord,
+  NotificationHistoryRepository,
+  UserInfo,
+  BookInfo,
+  LoanInfo,
+  EmailNotificationProcessorDeps,
+} from './email-sender.js';
+export {
+  createMockEmailSender,
+  createMockNotificationHistoryRepository,
+  createEmailNotificationProcessor,
+} from './email-sender.js';
