@@ -6,10 +6,11 @@
 
 import type { Result } from '../../shared/result.js';
 import { ok, err, isErr } from '../../shared/result.js';
+import type { CopyId } from '../../shared/branded-types.js';
 import type { LoanRepository } from './loan-repository.js';
 import type { BookRepository } from '../book/book-repository.js';
 import type { UserRepository } from '../user/user-repository.js';
-import type { Loan, CreateLoanInput, LoanError, LoanReceipt } from './types.js';
+import type { Loan, CreateLoanInput, LoanError, LoanReceipt, CopyLoanStatus } from './types.js';
 import { DEFAULT_LOAN_DURATION_DAYS } from './types.js';
 
 // ============================================
@@ -31,6 +32,22 @@ export interface LoanService {
    * @returns 貸出レシート（書籍タイトル、利用者名を含む）またはエラー
    */
   createLoanWithReceipt(input: CreateLoanInput): Promise<Result<LoanReceipt, LoanError>>;
+
+  /**
+   * 蔵書コピーの貸出状況を取得
+   * @param copyId - 蔵書コピーID
+   * @returns 貸出状況
+   */
+  getCopyLoanStatus(copyId: CopyId): Promise<Result<CopyLoanStatus, never>>;
+
+  /**
+   * 複数の蔵書コピーの貸出状況を一括取得
+   * @param copyIds - 蔵書コピーIDの配列
+   * @returns 蔵書コピーIDをキーとした貸出状況のMap
+   */
+  getBulkCopyLoanStatus(
+    copyIds: readonly CopyId[]
+  ): Promise<Result<Map<CopyId, CopyLoanStatus>, never>>;
 }
 
 // ============================================
@@ -193,6 +210,62 @@ export function createLoanService(
       };
 
       return ok(receipt);
+    },
+
+    async getCopyLoanStatus(copyId: CopyId): Promise<Result<CopyLoanStatus, never>> {
+      const activeLoan = await loanRepository.findActiveByCopyId(copyId);
+
+      if (activeLoan === null) {
+        return ok({
+          isBorrowed: false,
+          loan: null,
+          dueDate: null,
+        });
+      }
+
+      return ok({
+        isBorrowed: true,
+        loan: activeLoan,
+        dueDate: activeLoan.dueDate,
+      });
+    },
+
+    async getBulkCopyLoanStatus(
+      copyIds: readonly CopyId[]
+    ): Promise<Result<Map<CopyId, CopyLoanStatus>, never>> {
+      const statusMap = new Map<CopyId, CopyLoanStatus>();
+
+      if (copyIds.length === 0) {
+        return ok(statusMap);
+      }
+
+      const activeLoans = await loanRepository.findActiveByMultipleCopyIds(copyIds);
+
+      // 貸出中の蔵書コピーIDのセットを作成
+      const borrowedCopyIds = new Map<CopyId, Loan>();
+      for (const loan of activeLoans) {
+        borrowedCopyIds.set(loan.bookCopyId, loan);
+      }
+
+      // 各コピーIDの状態を設定
+      for (const copyId of copyIds) {
+        const loan = borrowedCopyIds.get(copyId);
+        if (loan !== undefined) {
+          statusMap.set(copyId, {
+            isBorrowed: true,
+            loan: loan,
+            dueDate: loan.dueDate,
+          });
+        } else {
+          statusMap.set(copyId, {
+            isBorrowed: false,
+            loan: null,
+            dueDate: null,
+          });
+        }
+      }
+
+      return ok(statusMap);
     },
   };
 }

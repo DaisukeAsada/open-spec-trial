@@ -52,6 +52,13 @@ export interface LoanRepository {
   findActiveByCopyId(copyId: CopyId): Promise<Loan | null>;
 
   /**
+   * 複数の蔵書コピーIDでアクティブな貸出を一括検索
+   * @param copyIds - 蔵書コピーIDの配列
+   * @returns アクティブな貸出の配列
+   */
+  findActiveByMultipleCopyIds(copyIds: readonly CopyId[]): Promise<Loan[]>;
+
+  /**
    * 貸出を更新（返却処理用）
    * @param id - 貸出ID
    * @param returnedAt - 返却日

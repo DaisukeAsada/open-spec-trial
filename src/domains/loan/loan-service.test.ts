@@ -31,6 +31,7 @@ function createMockLoanRepository(): LoanRepository {
     countActiveLoans: vi.fn(),
     findActiveByUserId: vi.fn(),
     findActiveByCopyId: vi.fn(),
+    findActiveByMultipleCopyIds: vi.fn(),
     updateReturnedAt: vi.fn(),
   };
 }
@@ -416,6 +417,96 @@ describe('LoanService', () => {
         expect(isErr(result)).toBe(true);
         if (isErr(result)) {
           expect(result.error.type).toBe('USER_NOT_FOUND');
+        }
+      });
+    });
+  });
+
+  // ============================================
+  // Task 5.3: 貸出状況表示機能
+  // ============================================
+
+  describe('getCopyLoanStatus', () => {
+    describe('正常系', () => {
+      it('貸出中の蔵書コピーの状態を取得できる', async () => {
+        // Arrange
+        const activeLoan: Loan = {
+          ...testLoan,
+          returnedAt: null,
+        };
+        vi.mocked(mockLoanRepository.findActiveByCopyId).mockResolvedValue(activeLoan);
+
+        // Act
+        const result = await loanService.getCopyLoanStatus(testCopyId);
+
+        // Assert
+        expect(isOk(result)).toBe(true);
+        if (isOk(result)) {
+          expect(result.value.isBorrowed).toBe(true);
+          expect(result.value.loan).toEqual(activeLoan);
+          expect(result.value.dueDate).toEqual(activeLoan.dueDate);
+        }
+      });
+
+      it('貸出されていない蔵書コピーの状態を取得できる', async () => {
+        // Arrange
+        vi.mocked(mockLoanRepository.findActiveByCopyId).mockResolvedValue(null);
+
+        // Act
+        const result = await loanService.getCopyLoanStatus(testCopyId);
+
+        // Assert
+        expect(isOk(result)).toBe(true);
+        if (isOk(result)) {
+          expect(result.value.isBorrowed).toBe(false);
+          expect(result.value.loan).toBeNull();
+          expect(result.value.dueDate).toBeNull();
+        }
+      });
+    });
+  });
+
+  describe('getBulkCopyLoanStatus', () => {
+    describe('正常系', () => {
+      const testCopyId2 = createCopyId('copy-789');
+      const testCopyId3 = createCopyId('copy-abc');
+
+      it('複数の蔵書コピーの貸出状態を一括取得できる', async () => {
+        // Arrange
+        const activeLoan: Loan = {
+          ...testLoan,
+          bookCopyId: testCopyId,
+          returnedAt: null,
+        };
+        const copyIds = [testCopyId, testCopyId2, testCopyId3];
+
+        vi.mocked(mockLoanRepository.findActiveByMultipleCopyIds).mockResolvedValue([activeLoan]);
+
+        // Act
+        const result = await loanService.getBulkCopyLoanStatus(copyIds);
+
+        // Assert
+        expect(isOk(result)).toBe(true);
+        if (isOk(result)) {
+          const statusMap = result.value;
+          expect(statusMap.get(testCopyId)?.isBorrowed).toBe(true);
+          expect(statusMap.get(testCopyId)?.dueDate).toEqual(activeLoan.dueDate);
+          expect(statusMap.get(testCopyId2)?.isBorrowed).toBe(false);
+          expect(statusMap.get(testCopyId3)?.isBorrowed).toBe(false);
+        }
+      });
+
+      it('空の蔵書コピーリストでも正常に動作する', async () => {
+        // Arrange
+        vi.mocked(mockLoanRepository.findActiveByMultipleCopyIds).mockResolvedValue([]);
+
+        // Act
+        const result = await loanService.getBulkCopyLoanStatus([]);
+
+        // Assert
+        expect(isOk(result)).toBe(true);
+        if (isOk(result)) {
+          expect(result.value.size).toBe(0);
         }
       });
     });
