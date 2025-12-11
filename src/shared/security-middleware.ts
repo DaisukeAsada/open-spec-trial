@@ -90,8 +90,10 @@ function sanitizeValue(value: unknown): unknown {
  *
  * サニタイズ対象:
  * - req.body: リクエストボディ
- * - req.query: クエリパラメータ
- * - req.params: ルートパラメータ
+ * 
+ * Note: Express 5.x では req.query と req.params は読み取り専用のため、
+ * body のみをサニタイズします。query/params のサニタイズが必要な場合は、
+ * 各ルートハンドラ内で個別に処理してください。
  */
 export function sanitizeInputMiddleware(req: Request, _res: Response, next: NextFunction): void {
   // body のサニタイズ
@@ -99,27 +101,8 @@ export function sanitizeInputMiddleware(req: Request, _res: Response, next: Next
     req.body = sanitizeObject(req.body);
   }
 
-  // query のサニタイズ
-  if (isRecord(req.query)) {
-    const sanitizedQuery: Record<string, unknown> = {};
-    for (const key of Object.keys(req.query)) {
-      sanitizedQuery[key] = sanitizeValue(req.query[key]);
-    }
-    req.query = sanitizedQuery as typeof req.query;
-  }
-
-  // params のサニタイズ
-  if (isRecord(req.params)) {
-    const sanitizedParams: Record<string, string> = {};
-    const nullByteRegex = new RegExp(String.fromCharCode(0), 'g');
-    for (const key of Object.keys(req.params)) {
-      const value = req.params[key];
-      if (typeof value === 'string') {
-        sanitizedParams[key] = value.replace(nullByteRegex, '').trim();
-      }
-    }
-    req.params = sanitizedParams;
-  }
+  // Note: Express 5.x では req.query と req.params は読み取り専用（getter only）
+  // のため、直接上書きできません。必要に応じてルートハンドラで個別にサニタイズしてください。
 
   next();
 }
