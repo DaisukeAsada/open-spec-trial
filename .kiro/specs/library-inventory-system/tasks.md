@@ -267,7 +267,7 @@
   - _Requirements: 1.1, 2.1, 3.1, 4.1, 6.1, 7.1_
 
 ## Task 14: 単体・統合テスト
-- [ ]* 14.1 ドメインサービス単体テスト
+- [x] 14.1 ドメインサービス単体テスト
   - BookService: ISBN バリデーション、CRUD 操作テスト
   - LoanService: 貸出可否判定、延滞計算テスト
   - ReservationService: 予約キュー順序、有効期限判定テスト
