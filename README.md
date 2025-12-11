@@ -130,42 +130,37 @@ flowchart TB
 
 ## 前提条件
 
-### 必須
+| ツール | バージョン | 確認コマンド | 用途 |
+|--------|------------|--------------|------|
+| VS Code | 最新 | - | エディタ |
+| Docker Desktop | 24 以上 | `docker -v` | コンテナ環境 |
+| Dev Containers 拡張 | 最新 | - | VS Code 拡張 |
 
-| ツール | バージョン | 確認コマンド |
-|--------|------------|--------------|
-| Node.js | 20 以上 | `node -v` |
-| npm | 10 以上 | `npm -v` |
-| Docker | 24 以上 | `docker -v` |
-| Docker Compose | v2 以上 | `docker compose version` |
-
-### オプション（推奨）
-
-| ツール | 用途 |
-|--------|------|
-| VS Code | 推奨エディタ |
-| Dev Containers 拡張 | 統一された開発環境 |
-| pnpm | 高速パッケージマネージャー |
+> 💡 Node.js や npm は Dev Container 内に含まれているため、ローカルへのインストールは不要です。
 
 ## セットアップ
 
-### 方法 A: Dev Container（推奨）
+本プロジェクトは **Dev Container** を使用して開発環境を構築します。
 
-VS Code と Docker がインストールされている場合、最も簡単な方法です。
-**PostgreSQL と Redis が自動的に起動**するため、追加の設定は不要です。
+### 手順
 
-1. リポジトリをクローン
+1. **リポジトリをクローン**
    ```bash
    git clone https://github.com/DaisukeAsada/cc-sdd-trial.git
    code cc-sdd-trial
    ```
 
-2. VS Code で「Reopen in Container」を選択
-   - コマンドパレット: `Dev Containers: Reopen in Container`
+2. **Dev Container で開く**
+   - VS Code でフォルダを開く
+   - 右下の通知「Reopen in Container」をクリック
+   - または、コマンドパレット（`F1`）→ `Dev Containers: Reopen in Container`
 
-3. コンテナ起動後、依存関係が自動インストールされます
+3. **コンテナ起動を待つ**
+   - 初回は Docker イメージのビルドに数分かかります
+   - 依存関係（npm install）は自動でインストールされます
+   - **PostgreSQL と Redis も自動で起動**します
 
-4. 開発サーバーを起動
+4. **開発サーバーを起動**
    ```bash
    # バックエンド
    npm run dev
@@ -174,52 +169,7 @@ VS Code と Docker がインストールされている場合、最も簡単な�
    cd client && npm run dev
    ```
 
-> 💡 **Note**: Dev Container では `npm run docker:up` は不要です。PostgreSQL/Redis はコンテナ起動時に自動で起動されます。
-
-### 方法 B: ローカル環境
-
-Dev Container を使用しない場合の手順です。
-
-#### 1. リポジトリのクローン
-
-```bash
-git clone https://github.com/DaisukeAsada/cc-sdd-trial.git
-cd cc-sdd-trial
-```
-
-#### 2. 依存関係のインストール
-
-```bash
-# バックエンド
-npm install
-
-# フロントエンド
-cd client
-npm install
-cd ..
-```
-
-#### 3. 環境変数の設定（オプション）
-
-デフォルト値が設定されているため、通常は不要です。
-カスタマイズする場合は `.env` ファイルを作成してください。
-
-#### 4. Docker でデータベース起動
-
-```bash
-npm run docker:up
-```
-
-#### 5. 開発サーバー起動
-
-```bash
-# バックエンド（ターミナル1）
-npm run dev
-
-# フロントエンド（ターミナル2）
-cd client
-npm run dev
-```
+> 💡 **ポイント**: データベースの手動起動は不要です。Dev Container 起動時に PostgreSQL・Redis が自動的に起動されます。
 
 ### 動作確認
 
@@ -241,7 +191,6 @@ npm run dev
 
 ```bash
 # 開発を始める
-npm run docker:up          # DB起動
 npm run dev                # バックエンド起動
 cd client && npm run dev   # フロントエンド起動（別ターミナル）
 
@@ -249,6 +198,8 @@ cd client && npm run dev   # フロントエンド起動（別ターミナル）
 npm test                   # watch mode
 npm run test:run           # 単発実行
 ```
+
+> 💡 Dev Container では PostgreSQL・Redis が自動起動されるため、DB の手動起動は不要です。
 
 ### バックエンド（ルートディレクトリ）
 
@@ -274,15 +225,6 @@ npm run test:run           # 単発実行
 | `npm run lint` | ESLint チェック | コミット前 |
 | `npm run lint:fix` | ESLint 自動修正 | エラー修正時 |
 | `npm run format` | Prettier 整形 | コード整形 |
-
-#### インフラ
-
-| コマンド | 説明 | 使用タイミング |
-|----------|------|----------------|
-| `npm run docker:up` | PostgreSQL/Redis 起動 | ローカル環境のみ |
-| `npm run docker:down` | PostgreSQL/Redis 停止 | ローカル環境のみ |
-
-> 💡 **Dev Container 使用時**: `docker:up/down` は不要です。DB は自動起動されます。
 
 ### フロントエンド（client/）
 
@@ -368,55 +310,45 @@ npm run test:run           # 単発実行
 | `tsconfig.json` | TypeScript コンパイラ設定 |
 | `eslint.config.mjs` | ESLint ルール設定 |
 | `vitest.config.ts` | テストフレームワーク設定 |
-| `docker-compose.yml` | ローカルDB/Redis コンテナ定義 |
+| `.devcontainer/` | Dev Container 設定（Docker Compose 含む） |
 
 ## 環境変数
 
-### 設定方法
-
 > 💡 **Dev Container 使用時**: 環境変数は自動設定されるため、通常は設定不要です。
-
-ローカル環境では以下の方法で設定できます：
-
-**1. `.env` ファイル（推奨）**
-
-```bash
-# プロジェクトルートに .env ファイルを作成
-POSTGRES_USER=library_user
-POSTGRES_PASSWORD=your_secure_password
-POSTGRES_DB=library_db
-```
-
-**2. シェル環境変数**
-
-```bash
-export POSTGRES_USER=library_user
-export POSTGRES_PASSWORD=your_secure_password
-```
 
 ### データベース（PostgreSQL）
 
-| 変数名 | 説明 | ローカル環境 | Dev Container |
-|--------|------|-------------|---------------|
-| `POSTGRES_USER` | ユーザー名 | `library_user` | `library_user` |
-| `POSTGRES_PASSWORD` | パスワード | `library_password` | `library_password` |
-| `POSTGRES_DB` | データベース名 | `library_db` | `library_db` |
-| `POSTGRES_HOST` | ホスト | `localhost` | `postgres` |
-| `POSTGRES_PORT` | ポート | `5432` | `5432` |
+| 変数名 | 説明 | デフォルト値 |
+|--------|------|-------------|
+| `POSTGRES_USER` | ユーザー名 | `library_user` |
+| `POSTGRES_PASSWORD` | パスワード | `library_password` |
+| `POSTGRES_DB` | データベース名 | `library_db` |
+| `POSTGRES_HOST` | ホスト | `postgres` |
+| `POSTGRES_PORT` | ポート | `5432` |
 
 ### キャッシュ/キュー（Redis）
 
-| 変数名 | 説明 | ローカル環境 | Dev Container |
-|--------|------|-------------|---------------|
-| `REDIS_HOST` | ホスト | `localhost` | `redis` |
-| `REDIS_PORT` | ポート | `6379` | `6379` |
+| 変数名 | 説明 | デフォルト値 |
+|--------|------|-------------|
+| `REDIS_HOST` | ホスト | `redis` |
+| `REDIS_PORT` | ポート | `6379` |
 
 ### アプリケーション
 
-| 変数名 | 説明 | デフォルト値 | 必須 |
-|--------|------|-------------|:----:|
-| `NODE_ENV` | 実行環境 | `development` | |
-| `PORT` | APIサーバーポート | `3000` | |
+| 変数名 | 説明 | デフォルト値 |
+|--------|------|-------------|
+| `NODE_ENV` | 実行環境 | `development` |
+| `PORT` | APIサーバーポート | `3000` |
+
+### ⚙️ カスタマイズ
+
+環境変数を変更する場合は、プロジェクトルートに `.env` ファイルを作成してください：
+
+```bash
+# .env
+POSTGRES_PASSWORD=your_secure_password
+PORT=4000
+```
 
 ### ⚠️ 本番環境での注意
 
