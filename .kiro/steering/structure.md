@@ -27,17 +27,22 @@
 
 ### インフラストラクチャ層 (`src/infrastructure/`)
 **Purpose**: 技術的実装詳細（DB、外部サービス）  
-**Files**:
+**Directories**:
 - `database/` - DB接続、マイグレーション、スキーマ
+- `repositories/` - Repository インターフェースの PostgreSQL 実装
 
-**Example**: `src/infrastructure/database/database.ts`
+**Pattern**: Repository 実装は `pg-<domain>-repository.ts` 命名規則に従う
+
+**Example**: `src/infrastructure/repositories/pg-book-repository.ts`
 
 ### 共有層 (`src/shared/`)
-**Purpose**: 横断的ユーティリティ、型定義  
+**Purpose**: 横断的ユーティリティ、型定義、セキュリティ機能  
 **Files**:
 - `result.ts` - Result<T, E> パターン
 - `branded-types.ts` - Branded Types（BookId, UserId 等）
 - `validation.ts` - バリデーション関数
+- `security.ts` - セキュリティユーティリティ（入力サニタイズ等）
+- `security-middleware.ts` - Express セキュリティミドルウェア
 
 **Example**: `src/shared/result.ts`
 
@@ -98,4 +103,4 @@ import type { CreateBookInput } from './types.js';
 
 ---
 _Document patterns, not file trees. New files following patterns shouldn't require updates_
-_Updated: 2025-12-10 - Added monorepo structure and frontend patterns_
+_Updated: 2025-12-12 - Added security utilities and infrastructure/repositories pattern_
