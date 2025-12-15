@@ -1,12 +1,12 @@
 // For format details, see https://aka.ms/devcontainer.json. For config options, see the
 // README at: https://github.com/devcontainers/templates/tree/main/src/python
 {
-	"name": "cc-sdd-trial",
+	"name": "open-spec-trial",
 	
 	// Docker Compose で PostgreSQL/Redis と一緒に起動
 	"dockerComposeFile": "docker-compose.yml",
 	"service": "app",
-	"workspaceFolder": "/workspaces/cc-sdd-trial",
+	"workspaceFolder": "/workspaces/open-spec-trial",
 
 	// ポートフォワーディング
 	"forwardPorts": [3000, 5173, 5432, 6379],
@@ -18,7 +18,7 @@
 	},
 
 	// コンテナ作成後に依存関係をインストール
-	"postCreateCommand": "npm install && cd client && npm install",
+	"postCreateCommand": "npm install -g @fission-ai/openspec@latest && npm install && cd client && npm install",
 
 	"customizations": {
 		"vscode": {

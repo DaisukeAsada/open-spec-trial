@@ -4,7 +4,7 @@ services:
       context: .
       dockerfile: Dockerfile
     volumes:
-      - ..:/workspaces/cc-sdd-trial:cached
+      - ..:/workspaces/open-spec-trial:cached
     command: sleep infinity
     depends_on:
       postgres:
@@ -22,7 +22,7 @@ services:
 
   postgres:
     image: postgres:16
-    container_name: library-postgres
+    container_name: library-postgres-2
     environment:
       POSTGRES_USER: library_user
       POSTGRES_PASSWORD: library_password
@@ -37,7 +37,7 @@ services:
 
   redis:
     image: redis:8
-    container_name: library-redis
+    container_name: library-redis-2
     volumes:
       - redis_data:/data
     healthcheck:
