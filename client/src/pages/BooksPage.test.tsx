@@ -120,7 +120,7 @@ describe('BooksPage', () => {
         id: 'book-3',
         title: 'Node.js完全ガイド',
         author: '田中次郎',
-        publisher: null,
+        publisher: 'テスト出版社',
         publicationYear: null,
         isbn: '9781234567890',
         category: null,
@@ -137,6 +137,7 @@ describe('BooksPage', () => {
       await user.type(screen.getByLabelText(/タイトル/), 'Node.js完全ガイド');
       await user.type(screen.getByLabelText(/著者/), '田中次郎');
       await user.type(screen.getByLabelText(/ISBN/), '9781234567890');
+      await user.type(screen.getByLabelText(/出版社/), 'テスト出版社');
       
       await user.click(screen.getByRole('button', { name: '登録' }));
       
@@ -144,12 +145,44 @@ describe('BooksPage', () => {
         expect(bookApi.createBook).toHaveBeenCalledWith({
           title: 'Node.js完全ガイド',
           author: '田中次郎',
-          publisher: null,
+          publisher: 'テスト出版社',
           publicationYear: null,
           isbn: '9781234567890',
           category: null,
         });
       });
+    });
+
+    it('出版社が未入力の場合はバリデーションエラー', async () => {
+      const user = userEvent.setup();
+      render(<BooksPage />);
+      
+      // 書籍一覧のロードを待つ
+      await waitFor(() => {
+        expect(screen.getByText('TypeScript入門')).toBeInTheDocument();
+      });
+      
+      await user.click(screen.getByRole('button', { name: '書籍を登録' }));
+      
+      // フォームが表示されるのを待つ
+      await waitFor(() => {
+        expect(screen.getByLabelText(/タイトル/)).toBeInTheDocument();
+      });
+      
+      // 出版社以外の必須項目を入力
+      await user.type(screen.getByLabelText(/タイトル/), 'テスト書籍');
+      await user.type(screen.getByLabelText(/著者/), 'テスト著者');
+      await user.type(screen.getByLabelText(/ISBN/), '9781234567890');
+      
+      // 出版社を入力せずに登録ボタンをクリック
+      await user.click(screen.getByRole('button', { name: '登録' }));
+      
+      await waitFor(() => {
+        expect(screen.getByText('この項目は必須です')).toBeInTheDocument();
+      });
+      
+      // createBook が呼ばれていないことを確認
+      expect(bookApi.createBook).not.toHaveBeenCalled();
     });
 
     it('ISBN重複エラーが表示される', async () => {
@@ -166,6 +199,7 @@ describe('BooksPage', () => {
       await user.type(screen.getByLabelText(/タイトル/), 'テスト書籍');
       await user.type(screen.getByLabelText(/著者/), 'テスト著者');
       await user.type(screen.getByLabelText(/ISBN/), '9784123456789');
+      await user.type(screen.getByLabelText(/出版社/), 'テスト出版社');
       
       await user.click(screen.getByRole('button', { name: '登録' }));
       

@@ -15,7 +15,7 @@ export interface Book {
   readonly id: BookId;
   readonly title: string;
   readonly author: string;
-  readonly publisher: string | null;
+  readonly publisher: string;
   readonly publicationYear: number | null;
   readonly isbn: string;
   readonly category: string | null;
@@ -27,7 +27,7 @@ export interface Book {
 export interface CreateBookInput {
   readonly title: string;
   readonly author: string;
-  readonly publisher?: string | null;
+  readonly publisher: string;
   readonly publicationYear?: number | null;
   readonly isbn: string;
   readonly category?: string | null;

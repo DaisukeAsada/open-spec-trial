@@ -31,7 +31,7 @@ import type {
 interface CreateBookRequestBody {
   title?: string;
   author?: string;
-  publisher?: string | null;
+  publisher?: string;
   publicationYear?: number | null;
   isbn?: string;
   category?: string | null;
@@ -92,7 +92,7 @@ export function createBookController(bookService: BookService): Router {
     const input: CreateBookInput = {
       title: body.title ?? '',
       author: body.author ?? '',
-      publisher: body.publisher ?? null,
+      publisher: body.publisher ?? '',
       publicationYear: body.publicationYear ?? null,
       isbn: body.isbn ?? '',
       category: body.category ?? null,

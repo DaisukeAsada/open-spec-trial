@@ -27,7 +27,7 @@ interface BookRow {
   id: string;
   title: string;
   author: string;
-  publisher: string | null;
+  publisher: string;
   publication_year: number | null;
   isbn: string;
   category: string | null;
@@ -89,7 +89,7 @@ export function createPgBookRepository(pool: DatabasePool): BookRepository {
           [
             input.title,
             input.author,
-            input.publisher ?? null,
+            input.publisher,
             input.publicationYear ?? null,
             input.isbn,
             input.category ?? null,

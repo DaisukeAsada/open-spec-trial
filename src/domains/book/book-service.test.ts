@@ -95,6 +95,7 @@ describe('BookService.createBook', () => {
         title: 'テスト書籍',
         author: 'テスト著者',
         isbn: '978-4-12-345678-4',
+        publisher: 'テスト出版社',
       };
 
       const result = await service.createBook(input);
@@ -109,6 +110,7 @@ describe('BookService.createBook', () => {
         title: '',
         author: 'テスト著者',
         isbn: '978-4-12-345678-4',
+        publisher: 'テスト出版社',
       };
 
       const result = await service.createBook(input);
@@ -127,6 +129,7 @@ describe('BookService.createBook', () => {
         title: 'テスト書籍',
         author: '',
         isbn: '978-4-12-345678-4',
+        publisher: 'テスト出版社',
       };
 
       const result = await service.createBook(input);
@@ -145,6 +148,7 @@ describe('BookService.createBook', () => {
         title: 'テスト書籍',
         author: 'テスト著者',
         isbn: '',
+        publisher: 'テスト出版社',
       };
 
       const result = await service.createBook(input);
@@ -163,6 +167,7 @@ describe('BookService.createBook', () => {
         title: 'テスト書籍',
         author: 'テスト著者',
         isbn: 'invalid-isbn',
+        publisher: 'テスト出版社',
       };
 
       const result = await service.createBook(input);
@@ -172,6 +177,25 @@ describe('BookService.createBook', () => {
         expect(result.error.type).toBe('VALIDATION_ERROR');
         if (result.error.type === 'VALIDATION_ERROR') {
           expect(result.error.field).toBe('isbn');
+        }
+      }
+    });
+
+    it('出版社が空の場合はVALIDATION_ERRORを返す', async () => {
+      const input: CreateBookInput = {
+        title: 'テスト書籍',
+        author: 'テスト著者',
+        isbn: '978-4-12-345678-4',
+        publisher: '',
+      };
+
+      const result = await service.createBook(input);
+
+      expect(isErr(result)).toBe(true);
+      if (isErr(result)) {
+        expect(result.error.type).toBe('VALIDATION_ERROR');
+        if (result.error.type === 'VALIDATION_ERROR') {
+          expect(result.error.field).toBe('publisher');
         }
       }
     });
@@ -189,6 +213,7 @@ describe('BookService.createBook', () => {
         title: '新しい書籍',
         author: '別の著者',
         isbn: '978-4-12-345678-4',
+        publisher: 'テスト出版社',
       };
 
       const result = await service.createBook(input);

@@ -16,7 +16,7 @@ describe('Schema Migrations', () => {
       const migration = createBooksTableMigration();
 
       expect(migration.name).toBe('001_create_books_table');
-      expect(migration.up).toContain('CREATE TABLE books');
+      expect(migration.up).toContain('CREATE TABLE IF NOT EXISTS books');
       expect(migration.up).toContain('id UUID PRIMARY KEY');
       expect(migration.up).toContain('title VARCHAR(500) NOT NULL');
       expect(migration.up).toContain('author VARCHAR(300) NOT NULL');
@@ -35,7 +35,7 @@ describe('Schema Migrations', () => {
       const migration = createBookCopiesTableMigration();
 
       expect(migration.name).toBe('002_create_book_copies_table');
-      expect(migration.up).toContain('CREATE TABLE book_copies');
+      expect(migration.up).toContain('CREATE TABLE IF NOT EXISTS book_copies');
       expect(migration.up).toContain('id UUID PRIMARY KEY');
       expect(migration.up).toContain('book_id UUID NOT NULL REFERENCES books(id)');
       expect(migration.up).toContain('location VARCHAR(100) NOT NULL');
@@ -53,7 +53,7 @@ describe('Schema Migrations', () => {
       const migration = createUsersTableMigration();
 
       expect(migration.name).toBe('003_create_users_table');
-      expect(migration.up).toContain('CREATE TABLE users');
+      expect(migration.up).toContain('CREATE TABLE IF NOT EXISTS users');
       expect(migration.up).toContain('id UUID PRIMARY KEY');
       expect(migration.up).toContain('name VARCHAR(200) NOT NULL');
       expect(migration.up).toContain('address VARCHAR(500)');
@@ -70,7 +70,7 @@ describe('Schema Migrations', () => {
       const migration = createLoansTableMigration();
 
       expect(migration.name).toBe('004_create_loans_table');
-      expect(migration.up).toContain('CREATE TABLE loans');
+      expect(migration.up).toContain('CREATE TABLE IF NOT EXISTS loans');
       expect(migration.up).toContain('id UUID PRIMARY KEY');
       expect(migration.up).toContain('user_id UUID NOT NULL REFERENCES users(id)');
       expect(migration.up).toContain('book_copy_id UUID NOT NULL REFERENCES book_copies(id)');
@@ -86,7 +86,7 @@ describe('Schema Migrations', () => {
       const migration = createReservationsTableMigration();
 
       expect(migration.name).toBe('005_create_reservations_table');
-      expect(migration.up).toContain('CREATE TABLE reservations');
+      expect(migration.up).toContain('CREATE TABLE IF NOT EXISTS reservations');
       expect(migration.up).toContain('id UUID PRIMARY KEY');
       expect(migration.up).toContain('user_id UUID NOT NULL REFERENCES users(id)');
       expect(migration.up).toContain('book_id UUID NOT NULL REFERENCES books(id)');
@@ -106,7 +106,7 @@ describe('Schema Migrations', () => {
       const migration = createOverdueRecordsTableMigration();
 
       expect(migration.name).toBe('006_create_overdue_records_table');
-      expect(migration.up).toContain('CREATE TABLE overdue_records');
+      expect(migration.up).toContain('CREATE TABLE IF NOT EXISTS overdue_records');
       expect(migration.up).toContain('id UUID PRIMARY KEY');
       expect(migration.up).toContain('loan_id UUID NOT NULL REFERENCES loans(id)');
       expect(migration.up).toContain('overdue_days INTEGER NOT NULL');
@@ -134,7 +134,7 @@ describe('Schema Migrations', () => {
     it('should return all migrations in correct order', () => {
       const migrations = getAllMigrations();
 
-      expect(migrations).toHaveLength(7);
+      expect(migrations).toHaveLength(8);
       expect(migrations[0]!.name).toBe('001_create_books_table');
       expect(migrations[1]!.name).toBe('002_create_book_copies_table');
       expect(migrations[2]!.name).toBe('003_create_users_table');
@@ -142,6 +142,7 @@ describe('Schema Migrations', () => {
       expect(migrations[4]!.name).toBe('005_create_reservations_table');
       expect(migrations[5]!.name).toBe('006_create_overdue_records_table');
       expect(migrations[6]!.name).toBe('007_create_full_text_search_index');
+      expect(migrations[7]!.name).toBe('008_alter_books_publisher_not_null');
     });
   });
 });

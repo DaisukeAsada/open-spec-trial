@@ -21,7 +21,7 @@ interface BookRow {
   id: string;
   title: string;
   author: string;
-  publisher: string | null;
+  publisher: string;
   publication_year: number | null;
   isbn: string;
   category: string | null;

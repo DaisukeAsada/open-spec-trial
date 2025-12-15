@@ -121,6 +121,7 @@ describe('BookController', () => {
       const response = await request(app).post('/api/books').send({
         title: 'Test Book',
         author: 'Test Author',
+        publisher: 'Test Publisher',
         isbn: '9784123456789',
       });
 

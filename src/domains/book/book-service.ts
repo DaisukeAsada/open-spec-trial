@@ -130,6 +130,16 @@ function validateCreateBookInput(input: CreateBookInput): Result<CreateBookInput
     });
   }
 
+  // 出版社必須チェック
+  const publisherResult = validateRequired(input.publisher, 'publisher');
+  if (isErr(publisherResult)) {
+    return err({
+      type: 'VALIDATION_ERROR',
+      field: 'publisher',
+      message: publisherResult.error.message,
+    });
+  }
+
   return ok(input);
 }
 

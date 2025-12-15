@@ -57,7 +57,7 @@ const createColumns = (
   { key: 'title', header: 'タイトル', sortable: true },
   { key: 'author', header: '著者', sortable: true },
   { key: 'isbn', header: 'ISBN' },
-  { key: 'publisher', header: '出版社', render: (book) => book.publisher ?? '-' },
+  { key: 'publisher', header: '出版社' },
   { key: 'publicationYear', header: '出版年', render: (book) => book.publicationYear?.toString() ?? '-' },
   { key: 'category', header: 'カテゴリ', render: (book) => book.category ?? '-' },
   {
@@ -181,6 +181,9 @@ export function BooksPage(): React.ReactElement {
     if (formData.isbn.trim() === '') {
       errors.isbn = 'この項目は必須です';
     }
+    if (formData.publisher.trim() === '') {
+      errors.publisher = 'この項目は必須です';
+    }
 
     setFormErrors(errors);
     return Object.keys(errors).length === 0;
@@ -199,7 +202,7 @@ export function BooksPage(): React.ReactElement {
       const input: CreateBookInput | UpdateBookInput = {
         title: formData.title.trim(),
         author: formData.author.trim(),
-        publisher: formData.publisher.trim() || null,
+        publisher: formData.publisher.trim(),
         publicationYear: formData.publicationYear !== '' 
           ? parseInt(formData.publicationYear, 10) 
           : null,
@@ -338,6 +341,8 @@ export function BooksPage(): React.ReactElement {
                 label="出版社"
                 value={formData.publisher}
                 onChange={handleFormChange('publisher')}
+                required
+                error={formErrors.publisher}
               />
               <FormInput
                 id="publicationYear"
